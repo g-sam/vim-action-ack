@@ -13,7 +13,7 @@ let g:loaded_vim_action_ack = 1
 " http://stackoverflow.com/questions/399078/what-special-characters-must-be-escaped-in-regular-expressions
 let g:vim_action_ack_escape_chars = get(g:, 'vim_action_ack_escape_chars', '#%.^$*+?()[{\\|')
 
-function! s:Ack(mode) abort
+function! s:Ack(mode)
   " preserver @@ register
   let reg_save = @@
 
@@ -37,28 +37,30 @@ function! s:Ack(mode) abort
   let escaped_for_ack = escape(escaped_for_ack, g:vim_action_ack_escape_chars)
   
   " ensure output does not appear in terminal. https://github.com/mileszs/ack.vim/pull/52
-  let l:shellpipe_bak =&shellpipe
-  let l:t_ti_bak=&t_ti
-  let l:t_te_bak=&t_te
+  let shellpipe_bak=&shellpipe
+  let t_ti_bak=&t_ti
+  let t_te_bak=&t_te
   try
-    let &shellpipe = '>'
+    let &shellpipe = '2>&1 >'
     set t_ti=
     set t_te=
     
     " execute Ack command. '!' is used to NOT jump to the first match
     exe ":Ack!" "'".escaped_for_ack."'"
-    
-  finally
-    let &shellpipe=l:shellpipe_bak
-    let &t_ti=l:t_ti_bak
-    let &t_te=l:t_te_bak
-    
-    " go to the first search match
+  " go to the first search match
     normal! n
-    
-    " recover @@ register
+
+  catch /E486/
+    exe ":cclose"
+    echo "Pattern not found"  
+  finally
+    let &shellpipe=shellpipe_bak
+    let &t_ti=t_ti_bak
+    let &t_te=t_te_bak
+  " recover @@ register
     let @@ = reg_save
   endtry
+  
 
 endfunction
 
